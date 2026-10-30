@@ -1,0 +1,130 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": false,
+    "rooms": {
+      "$pin": {
+        ".read": "auth != null && $pin.matches(/^[0-9]{6}$/) && (!data.exists() || data.child('expiresAt').val() > now)",
+        ".write": "auth != null && $pin.matches(/^[0-9]{6}$/) && ((!data.exists() && newData.child('hostId').val() === auth.uid) || (data.child('hostId').val() === auth.uid && data.child('expiresAt').val() > now && newData.exists()))",
+        ".validate": "newData.hasChildren(['hostId','createdAt','expiresAt','phase','questionIds','round','duration','title','startedAt'])",
+        "hostId": {
+          ".validate": "newData.isString() && ((!data.exists() && newData.val() === auth.uid) || newData.val() === data.val())"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && ((!data.exists() && newData.val() === now) || newData.val() === data.val())"
+        },
+        "expiresAt": {
+          ".validate": "newData.isNumber() && ((!data.exists() && newData.val() > now && newData.val() <= now + 86400000) || newData.val() === data.val())"
+        },
+        "phase": {
+          ".validate": "newData.isString() && newData.val().matches(/^(lobby|question|reveal|leaderboard|finished|closed)$/)"
+        },
+        "questionIds": {
+          ".validate": "newData.hasChildren(['0'])",
+          "$index": {
+            ".validate": "$index.matches(/^(0|[1-9]|[12][0-9])$/) && newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{1,100}$/)"
+          }
+        },
+        "round": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0 && newData.parent().child('questionIds').child(newData.val() + '').exists()"
+        },
+        "duration": {
+          ".validate": "newData.isNumber() && newData.val() >= 10 && newData.val() <= 120 && newData.val() % 1 === 0"
+        },
+        "title": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 80"
+        },
+        "startedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "players": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('rooms').child($pin).child('expiresAt').val() > now && root.child('rooms').child($pin).child('hostId').val() !== auth.uid && ((!data.exists() && newData.exists() && root.child('rooms').child($pin).child('phase').val() === 'lobby') || (data.exists() && !newData.exists() && root.child('rooms').child($pin).child('phase').val() === 'lobby') || (data.exists() && newData.exists() && newData.child('name').val() === data.child('name').val() && newData.child('avatar').val() === data.child('avatar').val() && newData.child('joinedAt').val() === data.child('joinedAt').val()))",
+            ".validate": "newData.hasChildren(['name','avatar','joinedAt','connected']) && $uid !== newData.parent().parent().child('hostId').val()",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20 && !newData.val().contains('<') && !newData.val().contains('>') && !newData.val().contains('\\u0000') && !newData.val().contains('\\u0001') && !newData.val().contains('\\u0002') && !newData.val().contains('\\u0003') && !newData.val().contains('\\u0004') && !newData.val().contains('\\u0005') && !newData.val().contains('\\u0006') && !newData.val().contains('\\u0007') && !newData.val().contains('\\u0008') && !newData.val().contains('\\u0009') && !newData.val().contains('\\u000a') && !newData.val().contains('\\u000b') && !newData.val().contains('\\u000c') && !newData.val().contains('\\u000d') && !newData.val().contains('\\u000e') && !newData.val().contains('\\u000f') && !newData.val().contains('\\u0010') && !newData.val().contains('\\u0011') && !newData.val().contains('\\u0012') && !newData.val().contains('\\u0013') && !newData.val().contains('\\u0014') && !newData.val().contains('\\u0015') && !newData.val().contains('\\u0016') && !newData.val().contains('\\u0017') && !newData.val().contains('\\u0018') && !newData.val().contains('\\u0019') && !newData.val().contains('\\u001a') && !newData.val().contains('\\u001b') && !newData.val().contains('\\u001c') && !newData.val().contains('\\u001d') && !newData.val().contains('\\u001e') && !newData.val().contains('\\u001f') && !newData.val().contains('\\u007f')"
+            },
+            "avatar": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5 && newData.val() % 1 === 0"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber() && ((!data.exists() && newData.val() === now) || newData.val() === data.val())"
+            },
+            "connected": {
+              ".write": "auth != null && auth.uid === $uid && root.child('rooms').child($pin).child('expiresAt').val() > now && root.child('rooms').child($pin).child('players').child($uid).exists() && newData.isBoolean()",
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "answers": {
+          "$round": {
+            ".validate": "$round.matches(/^(0|[1-9]|[12][0-9])$/)",
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.exists() && root.child('rooms').child($pin).child('expiresAt').val() > now && root.child('rooms').child($pin).child('players').child($uid).exists() && root.child('rooms').child($pin).child('phase').val() === 'question' && $round === root.child('rooms').child($pin).child('round').val() + '' && now >= root.child('rooms').child($pin).child('startedAt').val() && now <= root.child('rooms').child($pin).child('startedAt').val() + root.child('rooms').child($pin).child('duration').val() * 1000",
+              ".validate": "newData.hasChildren(['choice','at'])",
+              "choice": {
+                ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)"
+              },
+              "at": {
+                ".validate": "newData.isNumber() && ((!data.exists() && newData.val() === now) || newData.val() === data.val())"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "scores": {
+          "$uid": {
+            ".validate": "newData.hasChildren(['score','correct','streak','lastPoints']) && newData.parent().parent().child('players').child($uid).exists()",
+            "score": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30000 && newData.val() % 1 === 0"
+            },
+            "correct": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30 && newData.val() % 1 === 0"
+            },
+            "streak": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30 && newData.val() % 1 === 0"
+            },
+            "lastPoints": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000 && newData.val() % 1 === 0"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        },
+        "appearance": {
+          ".validate": "newData.hasChildren(['theme','motion'])",
+          "theme": {
+            ".validate": "newData.isString() && newData.val().matches(/^(purple|midnight|coral|forest)$/)"
+          },
+          "motion": {
+            ".validate": "newData.isBoolean()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "cold": {
+      ".read": true,
+      ".write": true
+    },
+    "connection": {
+      ".read": true,
+      ".write": true
+    },
+    "vibration": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

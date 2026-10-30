@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.DS_Store
+.sites-checkout/
+.sites-runtime/
+test-results/
+.firebase/
+firebase-debug.log
+database-debug.log
+ui-debug.log
+*-debug.log

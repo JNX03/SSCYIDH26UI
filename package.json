@@ -1,0 +1,20 @@
+{
+  "name": "design-gym",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.js",
+    "emulators": "node scripts/emulators.mjs start",
+    "test:firebase": "node scripts/emulators.mjs test",
+    "test:firebase:running": "node scripts/emulators.mjs test-running",
+    "local": "node scripts/local.mjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.1.0",
+    "firebase-tools": "15.34.2"
+  }
+}
