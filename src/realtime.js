@@ -1,3 +1,4 @@
+import { sidekicks } from './sidekicks.js';
 import { firebaseConfig, firebaseEmulators } from './firebase-config.js';
 import { normalizePin, validateNickname, resolveRound, normalizeAppearance } from './multiplayer-engine.js';
 
@@ -7,7 +8,19 @@ let sdkPromise;
 const connections = new Map();
 const configuredDatabaseEmulators = new Set();
 const error = (code, message) => Object.assign(new Error(message), { code: `live/${code}` });
-const avatarIds = ['violet', 'peach', 'mint', 'sky', 'rose', 'lemon'];
+export const avatarIds = sidekicks.map(sidekick => sidekick.id);
+const legacyAvatarIds = ['violet', 'peach', 'mint', 'sky', 'rose', 'lemon'];
+
+export function normalizeAvatar(value) {
+  let avatar = value;
+  if (typeof value === 'string') {
+    if (avatarIds.includes(value)) avatar = avatarIds.indexOf(value);
+    else if (legacyAvatarIds.includes(value)) avatar = legacyAvatarIds.indexOf(value);
+    else avatar = /^(?:0|[1-9][0-9]*)$/.test(value) ? Number(value) : NaN;
+  }
+  if (!Number.isInteger(avatar) || avatar < 0 || avatar >= avatarIds.length) throw error('invalid-avatar', 'Choose an animal from the list before joining.');
+  return avatar;
+}
 
 function requirePin(value) {
   const pin = normalizePin(value);
@@ -177,8 +190,7 @@ async function createService(config, emulators) {
       pin = requirePin(pin);
       const nickname = validateNickname(name);
       if (!nickname.valid) throw error('invalid-nickname', nickname.error);
-      avatar = typeof avatar === 'string' && avatarIds.includes(avatar) ? avatarIds.indexOf(avatar) : Number(avatar);
-      if (!Number.isInteger(avatar) || avatar < 0 || avatar > 5) throw error('invalid-avatar', 'Choose one of the six player avatars.');
+      avatar = normalizeAvatar(avatar);
       const room = await getRoom(pin);
       if (room.hostId === uid) throw error('host-is-not-player', 'You’re hosting this game. Join from another tab or device to play.');
       if (room.phase === 'closed' || room.phase === 'finished') throw error('room-closed', 'This game has ended. Ask the host for a new PIN.');

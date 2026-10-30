@@ -146,7 +146,14 @@ const cls=(tree,name)=>tree.nodes.filter(node=>has(node,name));
 function textNodeWithin(node){return node?.children.find(n=>n.tag==='p')||node?.children.find(n=>n.tag==='strong')||node;}
 function targetNodes(tree,question,correct,insight){
   if(question.visual==='kerning'){const word=cls(tree,correct?'vg-pair':'vg-all-gaps')[0];const spans=word?.children.filter(n=>n.tag==='span')||[];return correct?[spans[3]?.children.find(n=>n.tag==='i')].filter(Boolean):spans.map(n=>n.children.find(n=>n.tag==='i')).filter(Boolean);}
-  if(['colorwheel','design-wheel'].includes(question.visual)){const svg=tree.nodes.find(n=>n.tag==='svg'&&(has(n,'dv-wheel')||has(n.parent,'vg-colorwheel')));return svg?descendants(svg).filter(n=>n.tag==='circle'&&(question.visual==='colorwheel'||n.attrs.r==='5')):[];}
+  if(['colorwheel','design-wheel'].includes(question.visual)){const svg=tree.nodes.find(n=>n.tag==='svg'&&(has(n,'dv-wheel')||has(n.parent,'vg-colorwheel')));const markers=svg?descendants(svg).filter(n=>n.tag==='circle'&&(question.visual==='colorwheel'||n.attrs.r==='5')):[];
+    if(question.visual==='design-wheel'){
+      const own=question.options[correct?question.correct:1-question.correct].marks||[];
+      const other=question.options[correct?1-question.correct:question.correct].marks||[];
+      const different=own.findIndex(hue=>!other.includes(hue));
+      if(different>0)markers.unshift(...markers.splice(different,1));
+    }
+    return markers;}
   if(question.visual==='cart'){const rows=cls(tree,'vg-price-row');return correct?rows.filter(n=>!has(n,'vg-total')):rows.filter(n=>has(n,'vg-total'));}
   if(String(question.visual).startsWith('course-'))return cls(tree,'vg-course-scenario-copy').map(textNodeWithin);
   let targets=insight.targets.flatMap(name=>cls(tree,name));
@@ -189,11 +196,36 @@ function annotateMarkup(html,question,correct,insight){
   return {html,count:targets.length};
 }
 
+export function getAnnotationStyle(feature){return ['wheel-hues','letter-pair'].includes(feature)?'circle':'highlight';}
+
 export function renderAnnotatedVisual(question,index,revealed=false){
   const original=renderVisual(question,index);
   if(!revealed)return original;
   const insight=getAnswerInsight(question);const correct=index===question.correct;const result=annotateMarkup(original,question,correct,insight);
-  return `<div class="ai-annotated ${correct?'ai-correct':'ai-compare'} ai-kind-${insight.key}" data-ai-focus="${insight.key}" data-ai-targets="${result.count}"><div class="ai-scene">${result.html}</div><span class="ai-feature-caption"><b>1</b><span>${correct?'Look here':'Compare'}: ${escape(correct?insight.label:insight.wrongLabel)}</span></span></div>`;
+  return `<div class="ai-annotated ${correct?'ai-correct':'ai-compare'} ai-kind-${insight.key}" data-ai-focus="${insight.key}" data-ai-mark="${getAnnotationStyle(insight.key)}" data-ai-targets="${result.count}"><div class="ai-scene">${result.html}</div><span class="ai-feature-caption"><b>1</b><span>${correct?'Look here':'Compare'}: ${escape(correct?insight.label:insight.wrongLabel)}</span></span></div>`;
 }
 
 export function renderVisualComparisonTip(question){const insight=getAnswerInsight(question);return `<aside class="ai-comparison-tip"><span class="ai-tip-marker">1</span><div><strong>What to spot: ${escape(insight.label)}</strong><p>${escape(insight.tip)}</p></div></aside>`;}
+
+/** Draw the teaching arrow from actual layout, so it points to the compared feature at any size. */
+export function positionAnswerAnnotations(root){
+ const ns='http://www.w3.org/2000/svg';
+ for(const scene of root.querySelectorAll('.ai-scene')){
+  scene.querySelector('.ai-pointer-overlay')?.remove();
+  const target=scene.querySelector('[data-ai-primary]');if(!target||getAnnotationStyle(target.getAttribute('data-ai-feature'))!=='circle')continue;
+  const box=scene.getBoundingClientRect(),focus=target.getBoundingClientRect();
+  if(box.width<1||focus.width<1||focus.height<1)continue;
+  const w=box.width,h=box.height;
+  const cx=Math.max(14,Math.min(w-14,focus.left-box.left+focus.width/2));
+  const cy=Math.max(14,Math.min(h-14,focus.top-box.top+focus.height/2));
+  const rx=Math.max(12,Math.min(focus.width/2+9,w/2-12)),ry=Math.max(12,Math.min(focus.height/2+8,h/2-12));
+  const left=cx>w*.52;const endX=cx+(left?-1:1)*rx*.7,endY=cy-ry*.72;
+  const startX=Math.max(24,Math.min(w-24,endX+(left?-65:65)));
+  const startY=Math.max(24,Math.min(h-24,endY-55));
+  const svg=document.createElementNS(ns,'svg');svg.setAttribute('class','ai-pointer-overlay');svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.setAttribute('aria-hidden','true');svg.setAttribute('data-points-to',target.getAttribute('data-ai-feature'));
+  const color=scene.closest('.ai-correct')?'#11844b':'#bf3d4f';
+  // A halo keeps the hand-drawn-style marks readable over colored artwork.
+  svg.innerHTML=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="white" stroke-width="7"/><ellipse class="ai-teaching-circle" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="${color}" stroke-width="3"/><path d="M${startX},${startY} Q${endX},${startY-5} ${endX},${endY}" fill="none" stroke="white" stroke-width="8" stroke-linecap="round"/><path class="ai-teaching-arrow" d="M${startX},${startY} Q${endX},${startY-5} ${endX},${endY} m-7,-9 l7,9 l8,-8" fill="none" stroke="${color}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  scene.append(svg);
+ }
+}

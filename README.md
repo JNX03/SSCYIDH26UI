@@ -1,6 +1,6 @@
-# Design Gym Live
+# Design Gym
 
-A live visual design quiz with 191 original questions, a six-digit game PIN, timed answers, realtime rankings, animal sidekicks, and explanations that highlight the relevant design detail.
+A live visual design quiz with 191 original questions, a six-digit game PIN, timed answers, realtime rankings, 24 animal sidekicks, English/Thai controls and questions, and annotated answer images.
 
 ## Run
 
@@ -18,9 +18,11 @@ The game uses the **INDEX** Firebase project (`index-5a9bb`) with Realtime Datab
 
 ## Play
 
-The host chooses a topic, question count, timer, room theme, and motion preference, then shares the PIN or join link. Players choose a nickname and animal sidekick. A submitted answer locks until the host reveals the result. A round ends automatically when all connected players answer or the timer expires. Only the host advances through the explanation, ranking, and next question.
+The host chooses a topic, question count, timer, room theme, and motion preference, then shares the PIN or join link. Players choose a nickname and one of 24 animal sidekicks. The EN/ไทย control switches the entire interface, all 191 questions, mockup labels, and answer explanations. Language is saved on the device; switching during a round preserves the selected answer and room. Player names and custom room titles remain as entered. A submitted answer locks until the host reveals the result. A round ends automatically when all connected players answer or the timer expires. Only the host advances through the explanation, ranking, and next question.
 
 Correct answers earn 500–1,000 points depending on response time. Incorrect and missing answers earn zero. The final scoreboard ranks actual players and shows a podium.
+
+Answer reveals highlight relevant boxes, cards, fields, and controls. Circles and arrows are reserved for precise details such as color markers and letter gaps. Green marks identify the correct example; red marks identify the comparison. Wheel pointers focus on hues that differ between the choices.
 
 The default visual question pool contains 91 comparison exercises. The optional full pool adds 100 scenario questions. Topics include color theory, typography, UX principles, layout, accessibility, forms, components, and content.
 

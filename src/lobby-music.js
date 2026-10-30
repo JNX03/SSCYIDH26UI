@@ -1,3 +1,4 @@
+import {localizeElement} from './i18n.js';
 import {icon} from './icons.js';
 export const HALLOWEEN_EMBED_TRACK='https://api.soundcloud.com/tracks/732989191';
 export const HALLOWEEN_TRACK='https://soundcloud.com/kahoot-lobby-music/halloween-original';
@@ -16,8 +17,8 @@ export function mountLobbyMusic(container,{isHost,phase}){
 }
 function create(container){
  const panel=document.createElement('section');panel.className='lobby-music-panel';panel.hidden=true;panel.setAttribute('aria-label','Halloween lobby music');
- panel.innerHTML=`<div class="lobby-music-heading"><span class="lobby-pumpkin" aria-hidden="true">🎃</span><div><strong>Halloween lobby</strong><a href="${HALLOWEEN_TRACK}" target="_blank" rel="noopener noreferrer">Kahoot · SoundCloud ${icon('external',10)}</a></div><button type="button" class="lobby-music-toggle" data-music-play aria-label="Play Halloween lobby music">${icon('play',17)}</button><button type="button" class="lobby-music-mute" data-music-mute aria-label="Mute music" disabled>${icon('sound',17)}</button></div><div class="lobby-music-player"></div><p class="lobby-music-status" role="status">Press play for a spooky little waiting room.</p>`;
- container.append(panel);
+ panel.innerHTML=`<div class="lobby-music-heading"><span class="lobby-pumpkin" aria-hidden="true">🎃</span><div><strong>Halloween lobby</strong><a href="${HALLOWEEN_TRACK}" target="_blank" rel="noopener noreferrer">Kahoot · SoundCloud ${icon('external',10)}</a></div><button type="button" class="lobby-music-toggle" data-music-play aria-label="Play Halloween lobby music">${icon('play',17)}</button><button type="button" class="lobby-music-mute" data-music-mute aria-label="Mute music" disabled>${icon('sound',17)}</button></div><div class="lobby-music-player"></div><p class="lobby-music-status" role="status">Play Halloween lobby music.</p>`;
+ container.append(panel);localizeElement(panel);
  const state={container,panel,widget:null,iframe:null,active:false,wantPlay:false,playing:false,muted:false,ready:false,disposed:false};current=state;
  panel.querySelector('[data-music-play]').addEventListener('click',()=>toggle(state));
  panel.querySelector('[data-music-mute]').addEventListener('click',()=>{state.muted=!state.muted;state.widget?.setVolume(state.muted?0:50);update(state);});
@@ -43,7 +44,7 @@ async function toggle(state){
 function updateControls(state){
  const play=state.panel.querySelector('[data-music-play]'),mute=state.panel.querySelector('[data-music-mute]');
  play.innerHTML=state.wantPlay?'<span aria-hidden="true">Ⅱ</span>':icon('play',17);play.setAttribute('aria-label',`${state.wantPlay?'Pause':'Play'} Halloween lobby music`);play.setAttribute('aria-pressed',String(state.wantPlay));
- mute.disabled=!state.ready;mute.innerHTML=icon(state.muted?'mute':'sound',17);mute.setAttribute('aria-label',state.muted?'Unmute music':'Mute music');mute.setAttribute('aria-pressed',String(state.muted));
+ mute.disabled=!state.ready;mute.innerHTML=icon(state.muted?'mute':'sound',17);mute.setAttribute('aria-label',state.muted?'Unmute music':'Mute music');mute.setAttribute('aria-pressed',String(state.muted));localizeElement(state.panel);
 }
-function update(state){if(state.disposed)return;updateControls(state);if(state.ready)state.panel.querySelector('.lobby-music-status').textContent=state.playing?(state.muted?'Music is playing, muted.':'The original Halloween track, playing through SoundCloud.'):state.wantPlay?'Ready. Press play in the SoundCloud player if playback has not started.':'Music paused. Ready when you are.';}
+function update(state){if(state.disposed)return;updateControls(state);if(state.ready)state.panel.querySelector('.lobby-music-status').textContent=state.playing?(state.muted?'Music is playing, muted.':'The original Halloween track, playing through SoundCloud.'):state.wantPlay?'Ready. Press play in the SoundCloud player if playback has not started.':'Music paused. Ready when you are.';localizeElement(state.panel);}
 export function unmountLobbyMusic(){if(!current)return;const state=current;state.disposed=true;try{state.widget?.pause();}catch{}state.panel.remove();current=null;}

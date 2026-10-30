@@ -101,3 +101,12 @@ test('INDEX host transactions reveal and score once, then control the next quest
   await assertSucceeds(set(ref(player, `rooms/${pin}/answers/1/player`), { choice: 0, at: serverTimestamp() }));
   } finally { releaseCache(); }
 });
+
+
+test('INDEX game profiles accept animal 23 and reject animal 24', async () => {
+  await createRoom();
+  const deer = database('deer-player');
+  await assertSucceeds(set(ref(deer, `rooms/${pin}/players/deer-player`), { name: 'เฟิร์น', avatar: 23, joinedAt: serverTimestamp(), connected: true }));
+  const invalid = database('invalid-player');
+  await assertFails(set(ref(invalid, `rooms/${pin}/players/invalid-player`), { name: 'ผู้เล่น', avatar: 24, joinedAt: serverTimestamp(), connected: true }));
+});

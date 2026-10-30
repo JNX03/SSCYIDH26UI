@@ -63,7 +63,7 @@ test('player profiles enforce name, avatar, server timestamp, and exact fields',
   await createRoom();
   const db = database('player');
   const path = ref(db, `rooms/${pin}/players/player`);
-  for (const value of [player(''), player('a'.repeat(21)), player('<script>'), player('a\nb'), player('a\u0001b'), player('Alex', 6), { ...player(), joinedAt: 1 }, { ...player(), score: 99999 }]) await assertFails(set(path, value));
+  for (const value of [player(''), player('a'.repeat(21)), player('<script>'), player('a\nb'), player('a\u0001b'), player('Alex', 24), { ...player(), joinedAt: 1 }, { ...player(), score: 99999 }]) await assertFails(set(path, value));
   await assertSucceeds(set(path, player('นักออกแบบ', 5)));
 });
 
@@ -179,4 +179,17 @@ test('expired rooms cannot be read, joined, or modified', async () => {
   await assertFails(get(roomRef(database('reader'))));
   await assertFails(set(ref(database('player'), `rooms/${pin}/players/player`), player()));
   await assertFails(update(roomRef(host), { phase: 'closed' }));
+});
+
+
+test('all 24 animal avatar indices are accepted and out-of-range values are denied', async () => {
+  await createRoom();
+  for (let avatar = 0; avatar < 24; avatar += 1) {
+    const uid = `animal-${avatar}`;
+    await assertSucceeds(set(ref(database(uid), `rooms/${pin}/players/${uid}`), player('ผู้เล่น', avatar)));
+  }
+  for (const [index, avatar] of [-1, 24, 1.5, '23'].entries()) {
+    const uid = `invalid-animal-${index}`;
+    await assertFails(set(ref(database(uid), `rooms/${pin}/players/${uid}`), player('ผู้เล่น', avatar)));
+  }
 });

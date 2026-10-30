@@ -50,3 +50,16 @@ test('form reveal locates persistent labels and actionable error text in their o
 test('every revealed example has a real feature target and a nonempty focused explanation',()=>{
   for(const q of all){assert.match(renderVisualComparisonTip(q),/<strong>What to spot: .+<\/strong><p>.+<\/p>/);for(const index of [0,1]){const html=renderAnnotatedVisual(q,index,true);assert.doesNotMatch(html,/data-ai-targets="0"|undefined|NaN/);assert.match(html,/data-ai-feature="[a-z-]+"/);assert.doesNotMatch(html,/<(?:button|input|select|textarea|a)\b/);}}
 });
+
+test('wheel teaching pointers focus on the differing hue instead of a shared marker',()=>{
+ const q=designChallenges.find(q=>q.id==='design-color-tetradic');
+ for(const index of [q.correct,1-q.correct]){
+  const marks=q.options[index].marks,other=q.options[1-index].marks;
+  const differing=marks.find(hue=>!other.includes(hue));
+  const angle=(differing*30-90)*Math.PI/180;
+  const expectedX=110+65*Math.cos(angle),expectedY=110+65*Math.sin(angle);
+  const html=renderAnnotatedVisual(q,index,true);
+  const primary=html.match(/<circle[^>]*data-ai-primary="true"[^>]*>/)?.[0];
+  assert.ok(primary);assert.ok(Math.abs(Number(primary.match(/cx="([^"]+)"/)[1])-expectedX)<.01);assert.ok(Math.abs(Number(primary.match(/cy="([^"]+)"/)[1])-expectedY)<.01);
+ }
+});
